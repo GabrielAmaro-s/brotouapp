@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  usuarios Usuario[]
+  plantas  Planta[]
+
+  @@map("admins")
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  urlAvatar String?  @map("url_avatar")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  adminId String? @map("admin_id")
+  admin   Admin?  @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  plantas       Planta[]
+  entradasDiario EntradaDiario[]
+  adocoes        Adocao[]
+
+  @@map("usuarios")
+}
+
+model Especie {
+  id             String      @id @default(cuid())
+  nomeComum      String      @map("nome_comum")
+  nomeCientifico String      @map("nome_cientifico")
+  dicaRega       String      @map("dica_rega")
+  dicaLuz        String      @map("dica_luz")
+  dificuldade    Dificuldade
+
+  plantas Planta[]
+
+  @@map("especies")
+}
+
+model Planta {
+  id                    String   @id @default(cuid())
+  apelido               String
+  urlFoto               String?  @map("url_foto")
+  adquiridaEm           DateTime @map("adquirida_em")
+  disponivelParaAdocao  Boolean  @default(false) @map("disponivel_para_adocao")
+
+  donoId    String  @map("dono_id")
+  dono      Usuario @relation(fields: [donoId], references: [id], onDelete: Cascade)
+
+  especieId String  @map("especie_id")
+  especie   Especie @relation(fields: [especieId], references: [id])
+
+  adminId String? @map("admin_id")
+  admin   Admin?  @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  entradasDiario EntradaDiario[]
+  adocoes        Adocao[]
+
+  @@map("plantas")
+}
+
+model EntradaDiario {
+  id          String          @id @default(cuid())
+  tipo        TipoEntrada
+  observacao  String?
+  registradoEm DateTime       @default(now()) @map("registrado_em")
+
+  plantaId String  @map("planta_id")
+  planta   Planta  @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+
+  autorId String  @map("autor_id")
+  autor   Usuario @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+  @@map("entradas_diario")
+}
+
+model Adocao {
+  id        String       @id @default(cuid())
+  dataInicio DateTime    @map("data_inicio")
+  dataFim    DateTime?   @map("data_fim")
+  status     StatusAdocao @default(PENDENTE)
+
+  plantaId String  @map("planta_id")
+  planta   Planta  @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+
+  cuidadorId String  @map("cuidador_id")
+  cuidador   Usuario @relation(fields: [cuidadorId], references: [id], onDelete: Cascade)
+
+  @@map("adocoes")
+}
+
+enum Dificuldade {
+  FACIL
+  MEDIO
+  DIFICIL
+}
+
+enum TipoEntrada {
+  REGA
+  ADUBACAO
+  PODA
+  OBSERVACAO
+}
+
+enum StatusAdocao {
+  PENDENTE
+  ATIVA
+  CONCLUIDA
+}
