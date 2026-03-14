@@ -2,15 +2,19 @@ import { createContext, useContext, useState, useCallback, useRef } from 'react'
 
 const AppContext = createContext(null)
 
+function safeParse(key) {
+  try {
+    const val = localStorage.getItem(key)
+    if (!val || val === 'undefined' || val === 'null') return null
+    return JSON.parse(val)
+  } catch {
+    return null
+  }
+}
+
 export function AppProvider({ children }) {
-  const [usuario, setUsuario] = useState(() => {
-    const saved = localStorage.getItem('brotou_usuario')
-    return saved ? JSON.parse(saved) : null
-  })
-  const [admin, setAdmin] = useState(() => {
-    const saved = localStorage.getItem('brotou_admin')
-    return saved ? JSON.parse(saved) : null
-  })
+  const [usuario, setUsuario] = useState(() => safeParse('brotou_usuario'))
+  const [admin, setAdmin] = useState(() => safeParse('brotou_admin'))
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const toastTimer = useRef(null)
