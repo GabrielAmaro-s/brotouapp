@@ -14,9 +14,9 @@ const errorHandler = require("./middlewares/errorHandler");
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────
-const origensPermitidas = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",")
-  : ["http://localhost:5173", "http://localhost:3000"];
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://brotouapp-production.up.railway.app"
 
 app.use(
   cors({
