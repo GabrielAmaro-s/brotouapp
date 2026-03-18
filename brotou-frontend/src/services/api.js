@@ -22,10 +22,10 @@ async function request(path, options = {}) {
 }
 
 function buildQuery(path, params = {}) {
-  const query = new URLSearchParams(
-    Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
-  ).toString()
-  return query ? `${path}?${query}` : path
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
+  if (entries.length === 0) return path  // ← sem parâmetros, retorna path limpo
+  const query = new URLSearchParams(entries).toString()
+  return `${path}?${query}`
 }
 
 export const usuariosApi = {

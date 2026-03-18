@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
-import { usuariosApi, authApi } from '../services/api'
+import { usuariosApi } from '../services/api'
 
 export default function Login() {
-  const { loginUsuario, loginAdmin, toast } = useApp()
+  const { loginUsuario, toast } = useApp()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', senha: '' })
   const [loading, setLoading] = useState(false)
@@ -17,7 +17,6 @@ export default function Login() {
     setLoading(true)
     setErro('')
     try {
-      // Para demo: busca usuário pelo e-mail
       const res = await usuariosApi.listar()
       const usuario = res.dados?.find(u => u.email === form.email)
       if (!usuario) throw new Error('Usuário não encontrado')
@@ -31,7 +30,7 @@ export default function Login() {
     }
   }
 
-  const handleAdminLogin = async () => {
+  const handleAdminLogin = () => {
     navigate('/admin-login')
   }
 
