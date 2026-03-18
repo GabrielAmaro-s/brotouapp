@@ -1,3 +1,33 @@
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://brotouapp-production.up.railway.app'
+
+async function request(path, options = {}) {
+  const token = localStorage.getItem('brotou_token')
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  })
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    throw new Error(data.mensagem || 'Erro na requisição')
+  }
+
+  return data
+}
+
+function buildQuery(path, params = {}) {
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
+  ).toString()
+  return query ? `${path}?${query}` : path
+}
+
 export const usuariosApi = {
   listar: (params = {}) => request(buildQuery('/usuarios', params)),
   buscar: (id) => request(`/usuarios/${id}`),
@@ -6,7 +36,6 @@ export const usuariosApi = {
   remover: (id) => request(`/usuarios/${id}`, { method: 'DELETE' }),
 }
 
-// ─── Espécies ─────────────────────────────────
 export const especiesApi = {
   listar: (params = {}) => request(buildQuery('/especies', params)),
   buscar: (id) => request(`/especies/${id}`),
@@ -15,7 +44,6 @@ export const especiesApi = {
   remover: (id) => request(`/especies/${id}`, { method: 'DELETE' }),
 }
 
-// ─── Plantas ─────────────────────────────────
 export const plantasApi = {
   listar: (params = {}) => request(buildQuery('/plantas', params)),
   buscar: (id) => request(`/plantas/${id}`),
@@ -24,7 +52,6 @@ export const plantasApi = {
   remover: (id) => request(`/plantas/${id}`, { method: 'DELETE' }),
 }
 
-// ─── Entradas ───────────────────────────────
 export const entradasApi = {
   listar: (params = {}) => request(buildQuery('/entradas', params)),
   buscar: (id) => request(`/entradas/${id}`),
@@ -33,7 +60,6 @@ export const entradasApi = {
   remover: (id) => request(`/entradas/${id}`, { method: 'DELETE' }),
 }
 
-// ─── Adoções ───────────────────────────────
 export const adocoesApi = {
   listar: (params = {}) => request(buildQuery('/adocoes', params)),
   buscar: (id) => request(`/adocoes/${id}`),
@@ -43,7 +69,6 @@ export const adocoesApi = {
   remover: (id) => request(`/adocoes/${id}`, { method: 'DELETE' }),
 }
 
-// ─── Admin ───────────────────────────────
 export const adminApi = {
   dashboard: () => {
     const token = localStorage.getItem('brotou_admin_token')
