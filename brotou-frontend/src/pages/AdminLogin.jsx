@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
-import { authApi } from '../services/api'
+import { adminApi } from '../services/api'
 
 export default function AdminLogin() {
   const { loginAdmin, toast } = useApp()
@@ -10,20 +10,20 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
- const handleSubmit = async (e) => {
-  e.preventDefault()
-  setLoading(true); setErro('')
-  try {
-    const res = await authApi.loginAdmin(form.email, form.senha)
-    loginAdmin(res.admin, res.token)  // ← era res.dados, é res.admin
-    toast('Bem-vindo, Administrador!')
-    navigate('/admin')
-  } catch (err) {
-    setErro(err.message)
-  } finally {
-    setLoading(false)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true); setErro('')
+    try {
+      const res = await adminApi.login(form.email, form.senha)
+      loginAdmin(res.admin, res.token)
+      toast('Bem-vindo, Administrador!')
+      navigate('/admin')
+    } catch (err) {
+      setErro(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
   return (
     <div className="page-enter" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--adm-bg)' }}>

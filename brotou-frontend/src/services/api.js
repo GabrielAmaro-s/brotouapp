@@ -70,6 +70,10 @@ export const adocoesApi = {
 }
 
 export const adminApi = {
+  login: (email, senha) => request('/admins/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, senha }),
+  }),
   dashboard: () => {
     const token = localStorage.getItem('brotou_admin_token')
     return request('/admins/dashboard', {
