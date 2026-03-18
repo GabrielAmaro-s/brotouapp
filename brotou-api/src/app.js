@@ -14,10 +14,10 @@ const errorHandler = require("./middlewares/errorHandler");
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────
-// ✅ CORRETO
-const BASE_URL =
-  process.env.VITE_API_URL ||
-  "https://brotouapp-production.up.railway.app"
+const origensPermitidas = [
+  "http://localhost:5173",
+  "https://brotouapp.vercel.app",
+];
 
 app.use(
   cors({
