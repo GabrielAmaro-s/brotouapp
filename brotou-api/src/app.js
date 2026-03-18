@@ -14,8 +14,9 @@ const errorHandler = require("./middlewares/errorHandler");
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────
+// ✅ CORRETO
 const BASE_URL =
-  import.meta.env.VITE_API_URL ||
+  process.env.VITE_API_URL ||
   "https://brotouapp-production.up.railway.app"
 
 app.use(
