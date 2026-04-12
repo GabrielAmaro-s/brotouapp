@@ -88,9 +88,10 @@ async function main() {
   // ─── Usuários ─────────────────────────────────────────────
   const ana = await prisma.usuario.upsert({
     where: { email: "ana@email.com" },
-    update: {},
+    update: { username: "ana.silva" },
     create: {
       nome: "Ana Silva",
+      username: "ana.silva",
       email: "ana@email.com",
       urlAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=180&q=80",
       adminId: admin.id,
@@ -99,9 +100,10 @@ async function main() {
 
   const carlos = await prisma.usuario.upsert({
     where: { email: "carlos@email.com" },
-    update: {},
+    update: { username: "carlos.lima" },
     create: {
       nome: "Carlos Lima",
+      username: "carlos.lima",
       email: "carlos@email.com",
       urlAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=180&q=80",
       adminId: admin.id,

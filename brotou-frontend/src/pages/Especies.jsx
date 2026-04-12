@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import AppShell from '../components/AppShell'
 import { useApi } from '../hooks/useApi'
 import { especiesApi } from '../services/api'
@@ -39,7 +39,7 @@ export default function Especies() {
       </div>
 
       <div className="filter-row">
-        {[['TODAS','Todas'], ['FACIL','Fácil'], ['MEDIO','Médio'], ['DIFICIL','Difícil']].map(([k,l]) => (
+        {[['TODAS', 'Todas'], ['FACIL', 'Fácil'], ['MEDIO', 'Médio'], ['DIFICIL', 'Difícil']].map(([k, l]) => (
           <button key={k} className={`fbtn${filtro === k ? ' active' : ''}`} onClick={() => setFiltro(k)}>{l}</button>
         ))}
       </div>

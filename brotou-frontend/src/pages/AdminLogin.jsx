@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
 import { adminApi } from '../services/api'
@@ -12,7 +12,8 @@ export default function AdminLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true); setErro('')
+    setLoading(true)
+    setErro('')
     try {
       const res = await adminApi.login(form.email, form.senha)
       loginAdmin(res.admin, res.token)
@@ -48,7 +49,7 @@ export default function AdminLogin() {
             <label style={{ color: 'var(--adm-muted)' }}>Senha</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="********"
               value={form.senha}
               onChange={e => setForm(p => ({ ...p, senha: e.target.value }))}
               style={{ background: 'var(--adm-bg3)', border: '1px solid var(--adm-border)', color: 'var(--adm-text)' }}

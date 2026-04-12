@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: ./brotou-api
+      dockerfile: Dockerfile
+    container_name: brotou-api
+    env_file:
+      - ./brotou-api/.env
+    environment:
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-5173}
+    ports:
+      - "${API_PORT:-3333}:3333"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./brotou-frontend
+      dockerfile: Dockerfile
+    container_name: brotou-frontend
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT:-3333}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    restart: unless-stopped

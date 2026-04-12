@@ -1,0 +1,38 @@
+GUIA RÁPIDO - DOCKER (Brotou)
+
+1) Pré-requisitos
+- Docker Desktop instalado e em execução.
+- Arquivo `brotou-api/.env` configurado (DATABASE_URL, DIRECT_URL e secrets JWT).
+
+2) Subir o projeto em containers
+- Na raiz do projeto, execute:
+  docker compose up -d --build
+
+3) Acessos
+- Frontend: http://localhost:5173
+- API: http://localhost:3333
+- Healthcheck da API: http://localhost:3333/health
+
+3.1) Se alguma porta já estiver em uso
+- PowerShell:
+  $env:API_PORT="3334"
+  $env:FRONTEND_PORT="5174"
+  docker compose up -d --build
+
+- Nesse caso:
+  Frontend: http://localhost:5174
+  API: http://localhost:3334
+
+4) Logs
+- Logs da API:
+  docker compose logs -f api
+- Logs do frontend:
+  docker compose logs -f frontend
+
+5) Parar containers
+- docker compose down
+
+6) Rebuild completo (se necessário)
+- docker compose down
+- docker compose build --no-cache
+- docker compose up -d

@@ -1,14 +1,14 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import AppShell from '../components/AppShell'
 import { useApp } from '../contexts/AppContext'
 import { useApi } from '../hooks/useApi'
 import { entradasApi } from '../services/api'
 
 const TIPO_IC = {
-  REGA:      { cls: 'ic-water', label: 'Rega',       cor: 'var(--blue)' },
-  ADUBACAO:  { cls: 'ic-fert',  label: 'Adubação',   cor: 'var(--sage)' },
-  PODA:      { cls: 'ic-prune', label: 'Poda',       cor: 'var(--warn-c)' },
-  OBSERVACAO:{ cls: 'ic-obs',   label: 'Observação', cor: 'var(--bark)' },
+  REGA: { cls: 'ic-water', label: 'Rega', cor: 'var(--blue)' },
+  ADUBACAO: { cls: 'ic-fert', label: 'Adubação', cor: 'var(--sage)' },
+  PODA: { cls: 'ic-prune', label: 'Poda', cor: 'var(--warn-c)' },
+  OBSERVACAO: { cls: 'ic-obs', label: 'Observação', cor: 'var(--bark)' },
 }
 
 export default function Diario() {
@@ -25,7 +25,7 @@ export default function Diario() {
       </div>
 
       <div className="filter-row">
-        {[['TODOS','Todas'], ['REGA','Rega'], ['ADUBACAO','Adubação'], ['PODA','Poda'], ['OBSERVACAO','Observação']].map(([k,l]) => (
+        {[['TODOS', 'Todas'], ['REGA', 'Rega'], ['ADUBACAO', 'Adubação'], ['PODA', 'Poda'], ['OBSERVACAO', 'Observação']].map(([k, l]) => (
           <button key={k} className={`fbtn${filtro === k ? ' active' : ''}`} onClick={() => setFiltro(k)}>{l}</button>
         ))}
       </div>
@@ -50,7 +50,7 @@ export default function Diario() {
                   </div>
                   <div className="act-body">
                     <div className="act-text">
-                      <strong>{e.planta?.apelido}</strong> — <span style={{ color: ic.cor, fontWeight: 600 }}>{ic.label}</span>
+                      <strong>{e.planta?.apelido}</strong> - <span style={{ color: ic.cor, fontWeight: 600 }}>{ic.label}</span>
                       {e.observacao ? `: ${e.observacao}` : ''}
                     </div>
                     <div className="act-time">

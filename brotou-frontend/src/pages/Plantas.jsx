@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import Modal from '../components/Modal'
@@ -15,7 +15,7 @@ export default function Plantas() {
   const [saving, setSaving] = useState(false)
 
   const { data: plantasRes, loading, refetch } = useApi(
-    () => plantasApi.listar({ donoId: usuario?.id }), [usuario?.id]
+    () => plantasApi.listar({ donoId: usuario?.id }), [usuario?.id],
   )
   const { data: especiesRes } = useApi(() => especiesApi.listar(), [])
 
@@ -32,8 +32,10 @@ export default function Plantas() {
 
   const handleSave = async () => {
     if (!form.apelido || !form.especieId || !form.adquiridaEm) {
-      toast('Preencha os campos obrigatórios'); return
+      toast('Preencha os campos obrigatórios')
+      return
     }
+
     setSaving(true)
     try {
       await plantasApi.criar({ ...form, donoId: usuario.id })
@@ -61,7 +63,7 @@ export default function Plantas() {
       </div>
 
       <div className="filter-row">
-        {[['todas','Todas'], ['FACIL','Fácil'], ['MEDIO','Médio'], ['DIFICIL','Difícil'], ['adocao','Para adoção']].map(([k, l]) => (
+        {[['todas', 'Todas'], ['FACIL', 'Fácil'], ['MEDIO', 'Médio'], ['DIFICIL', 'Difícil'], ['adocao', 'Para adoção']].map(([k, l]) => (
           <button key={k} className={`fbtn${filtro === k ? ' active' : ''}`} onClick={() => setFiltro(k)}>{l}</button>
         ))}
       </div>

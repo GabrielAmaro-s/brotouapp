@@ -9,6 +9,7 @@ import Plantas from './pages/Plantas'
 import DetalhePlanta from './pages/DetalhePlanta'
 import Diario from './pages/Diario'
 import Adocoes from './pages/Adocoes'
+import Amigos from './pages/Amigos'
 import Especies from './pages/Especies'
 import Perfil from './pages/Perfil'
 import AdminLogin from './pages/AdminLogin'
@@ -34,9 +35,10 @@ function AppRoutes() {
 
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/plantas" element={<PrivateRoute><Plantas /></PrivateRoute>} />
-      <Route path="/plantas/:id" element={<PrivateRoute><DetalhePlanta /></PrivateRoute>} />
+      <Route path="/plantas/:id" element={<DetalhePlanta />} />
       <Route path="/diario" element={<PrivateRoute><Diario /></PrivateRoute>} />
       <Route path="/adocoes" element={<PrivateRoute><Adocoes /></PrivateRoute>} />
+      <Route path="/amigos" element={<PrivateRoute><Amigos /></PrivateRoute>} />
       <Route path="/especies" element={<PrivateRoute><Especies /></PrivateRoute>} />
       <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
 

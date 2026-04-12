@@ -1,4 +1,4 @@
-const prisma = require("../lib/prisma");
+﻿const prisma = require("../lib/prisma");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -21,7 +21,7 @@ const login = async (req, res, next) => {
     const token = jwt.sign(
       { id: admin.id, email: admin.email },
       process.env.JWT_ADMIN_SECRET,
-      { expiresIn: process.env.JWT_ADMIN_EXPIRES_IN || "1d" }
+      { expiresIn: process.env.JWT_ADMIN_EXPIRES_IN || "1d" },
     );
 
     const { senha: _, ...adminSemSenha } = admin;
@@ -117,31 +117,67 @@ const remover = async (req, res, next) => {
   }
 };
 
-// GET /admins/dashboard — métricas gerais
+// GET /admins/dashboard
 const dashboard = async (req, res, next) => {
   try {
-    const [totalUsuarios, totalPlantas, totalEspecies, totalAdocoes, totalEntradas] =
-      await Promise.all([
-        prisma.usuario.count(),
-        prisma.planta.count(),
-        prisma.especie.count(),
-        prisma.adocao.count(),
-        prisma.entradaDiario.count(),
-      ]);
+    const inicioPeriodo = new Date();
+    inicioPeriodo.setHours(0, 0, 0, 0);
+    inicioPeriodo.setDate(inicioPeriodo.getDate() - 6);
 
-    const adocoesPorStatus = await prisma.adocao.groupBy({
-      by: ["status"],
-      _count: { status: true },
-    });
+    const [totalUsuarios, totalPlantas, totalEspecies, totalAdocoes, totalEntradas] = await Promise.all([
+      prisma.usuario.count(),
+      prisma.planta.count(),
+      prisma.especie.count(),
+      prisma.adocao.count(),
+      prisma.entradaDiario.count(),
+    ]);
 
-    const entradasPorTipo = await prisma.entradaDiario.groupBy({
-      by: ["tipo"],
-      _count: { tipo: true },
-    });
+    const [
+      interacoesPendentes,
+      adocoesPorStatus,
+      entradasPorTipo,
+      plantasPorDificuldade,
+      entradasRecentes,
+      ultimasPlantas,
+    ] = await Promise.all([
+      prisma.adocao.count({ where: { status: "PENDENTE" } }),
+      prisma.adocao.groupBy({ by: ["status"], _count: { status: true } }),
+      prisma.entradaDiario.groupBy({ by: ["tipo"], _count: { tipo: true } }),
+      prisma.especie.groupBy({ by: ["dificuldade"], _count: { dificuldade: true } }),
+      prisma.entradaDiario.findMany({
+        where: { registradoEm: { gte: inicioPeriodo } },
+        select: { registradoEm: true },
+        orderBy: { registradoEm: "asc" },
+      }),
+      prisma.planta.findMany({
+        take: 6,
+        orderBy: { adquiridaEm: "desc" },
+        include: {
+          especie: { select: { nomeComum: true, dificuldade: true } },
+          dono: { select: { id: true, nome: true, email: true } },
+        },
+      }),
+    ]);
 
-    const plantasPorDificuldade = await prisma.especie.groupBy({
-      by: ["dificuldade"],
-      _count: { dificuldade: true },
+    const mapaEntradas = entradasRecentes.reduce((acc, entrada) => {
+      const chave = entrada.registradoEm.toISOString().slice(0, 10);
+      acc[chave] = (acc[chave] || 0) + 1;
+      return acc;
+    }, {});
+
+    const entradasUltimos7Dias = Array.from({ length: 7 }, (_, idx) => {
+      const data = new Date(inicioPeriodo);
+      data.setDate(inicioPeriodo.getDate() + idx);
+      const chave = data.toISOString().slice(0, 10);
+      const rotulo = new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
+        .format(data)
+        .replace(".", "");
+
+      return {
+        data: chave,
+        rotulo: rotulo.charAt(0).toUpperCase() + rotulo.slice(1),
+        total: mapaEntradas[chave] || 0,
+      };
     });
 
     return res.json({
@@ -153,6 +189,7 @@ const dashboard = async (req, res, next) => {
           especies: totalEspecies,
           adocoes: totalAdocoes,
           entradas: totalEntradas,
+          interacoesPendentes,
         },
         adocoesPorStatus: adocoesPorStatus.map((a) => ({
           status: a.status,
@@ -166,6 +203,8 @@ const dashboard = async (req, res, next) => {
           dificuldade: p.dificuldade,
           total: p._count.dificuldade,
         })),
+        entradasUltimos7Dias,
+        ultimasPlantas,
       },
     });
   } catch (err) {

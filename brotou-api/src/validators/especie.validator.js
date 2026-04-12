@@ -1,4 +1,4 @@
-const { z } = require("zod");
+﻿const { z } = require("zod");
 
 const dificuldadeEnum = z.enum(["FACIL", "MEDIO", "DIFICIL"], {
   errorMap: () => ({ message: "Dificuldade deve ser FACIL, MEDIO ou DIFICIL" }),

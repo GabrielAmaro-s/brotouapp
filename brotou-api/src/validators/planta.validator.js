@@ -1,4 +1,4 @@
-const { z } = require("zod");
+﻿const { z } = require("zod");
 
 const criarPlantaSchema = z.object({
   apelido: z.string().min(1, "Apelido é obrigatório").max(100),
@@ -9,9 +9,9 @@ const criarPlantaSchema = z.object({
     .transform((v) => new Date(v))
     .refine((d) => !isNaN(d.getTime()), "Data de aquisição inválida"),
   disponivelParaAdocao: z.boolean().default(false),
-  donoId: z.string().cuid("donoId inválido"),
-  especieId: z.string().cuid("especieId inválido"),
-  adminId: z.string().cuid("adminId inválido").optional(),
+  donoId: z.string().min(1, "donoId inválido"),
+  especieId: z.string().min(1, "especieId inválido"),
+  adminId: z.string().min(1, "adminId inválido").optional(),
 });
 
 const atualizarPlantaSchema = z.object({
@@ -24,13 +24,13 @@ const atualizarPlantaSchema = z.object({
     .refine((d) => !isNaN(d.getTime()), "Data de aquisição inválida")
     .optional(),
   disponivelParaAdocao: z.boolean().optional(),
-  especieId: z.string().cuid("especieId inválido").optional(),
-  adminId: z.string().cuid("adminId inválido").nullable().optional(),
+  especieId: z.string().min(1, "especieId inválido").optional(),
+  adminId: z.string().min(1, "adminId inválido").nullable().optional(),
 });
 
 const filtroPlantaSchema = z.object({
-  donoId: z.string().cuid().optional(),
-  especieId: z.string().cuid().optional(),
+  donoId: z.string().min(1).optional(),
+  especieId: z.string().min(1).optional(),
   disponivelParaAdocao: z
     .string()
     .transform((v) => v === "true")

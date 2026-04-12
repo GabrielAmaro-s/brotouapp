@@ -26,9 +26,12 @@ export function AppProvider({ children }) {
     toastTimer.current = setTimeout(() => setToastVisible(false), 2800)
   }, [])
 
-  const loginUsuario = useCallback((u) => {
+  const loginUsuario = useCallback((u, token) => {
     setUsuario(u)
     localStorage.setItem('brotou_usuario', JSON.stringify(u))
+    if (token) {
+      localStorage.setItem('brotou_token', token)
+    }
   }, [])
 
   const logoutUsuario = useCallback(() => {

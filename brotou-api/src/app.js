@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
@@ -9,15 +9,17 @@ const especieRoutes = require("./routes/especie.routes");
 const plantaRoutes = require("./routes/planta.routes");
 const entradaRoutes = require("./routes/entradaDiario.routes");
 const adocaoRoutes = require("./routes/adocao.routes");
+const amizadeRoutes = require("./routes/amizade.routes");
 const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 
-// ─── CORS ─────────────────────────────────────────────────────
 const origensPermitidas = [
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  process.env.FRONTEND_URL,
   "https://brotouapp.vercel.app",
-];
+].filter(Boolean);
 
 app.use(
   cors({
@@ -25,14 +27,12 @@ app.use(
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  })
+  }),
 );
 
-// ─── Parser ───────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Health check ─────────────────────────────────────────────
 app.get("/", (req, res) => {
   res.json({
     api: "Brotou API",
@@ -46,15 +46,14 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// ─── Rotas ────────────────────────────────────────────────────
 app.use("/admins", adminRoutes);
 app.use("/usuarios", usuarioRoutes);
 app.use("/especies", especieRoutes);
 app.use("/plantas", plantaRoutes);
 app.use("/entradas", entradaRoutes);
 app.use("/adocoes", adocaoRoutes);
+app.use("/amizades", amizadeRoutes);
 
-// ─── 404 ──────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     status: "erro",
@@ -62,7 +61,6 @@ app.use((req, res) => {
   });
 });
 
-// ─── Error Handler ────────────────────────────────────────────
 app.use(errorHandler);
 
 module.exports = app;

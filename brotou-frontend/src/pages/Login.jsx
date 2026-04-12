@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
 import { usuariosApi } from '../services/api'
@@ -6,7 +6,7 @@ import { usuariosApi } from '../services/api'
 export default function Login() {
   const { loginUsuario, toast } = useApp()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ email: '', senha: '' })
+  const [form, setForm] = useState({ identificador: '', senha: '' })
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -16,11 +16,10 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setErro('')
+
     try {
-      const res = await usuariosApi.listar()
-      const usuario = res.dados?.find(u => u.email === form.email)
-      if (!usuario) throw new Error('Usuário não encontrado')
-      loginUsuario(usuario)
+      const res = await usuariosApi.login(form.identificador)
+      loginUsuario(res.dados, res.token)
       toast('Bem-vindo ao Brotou!')
       navigate('/home')
     } catch (err) {
@@ -68,12 +67,12 @@ export default function Login() {
             <form className="auth-form" onSubmit={handleSubmit}>
               {erro && <div className="error-msg">{erro}</div>}
               <div className="field">
-                <label>E-mail</label>
-                <input type="email" name="email" placeholder="seu@email.com" value={form.email} onChange={handleChange} required />
+                <label>E-mail ou username</label>
+                <input name="identificador" placeholder="seu@email.com ou @usuario" value={form.identificador} onChange={handleChange} required />
               </div>
               <div className="field">
                 <label>Senha</label>
-                <input type="password" name="senha" placeholder="••••••••" value={form.senha} onChange={handleChange} />
+                <input type="password" name="senha" placeholder="********" value={form.senha} onChange={handleChange} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <a href="#" style={{ fontSize: 13, color: 'var(--sage)' }}>Esqueci minha senha</a>

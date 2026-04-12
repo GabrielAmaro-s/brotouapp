@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+﻿import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { useApp } from '../contexts/AppContext'
 import { useApi } from '../hooks/useApi'
@@ -52,12 +52,12 @@ export default function Home() {
       <div className="stats-row">
         <div className="sc">
           <div className="sc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-          <div className="sc-num">{lPlantas ? '—' : plantas.length}</div>
+          <div className="sc-num">{lPlantas ? '-' : plantas.length}</div>
           <div className="sc-lbl">Plantas cadastradas</div>
         </div>
         <div className="sc">
           <div className="sc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-          <div className="sc-num">{entradasRes?.total ?? '—'}</div>
+          <div className="sc-num">{entradasRes?.total ?? '-'}</div>
           <div className="sc-lbl">Entradas no diário</div>
         </div>
         <div className="sc">
@@ -124,7 +124,7 @@ export default function Home() {
                   <div className={`act-ic ${ic.cls}`}>{ic.icon}</div>
                   <div className="act-body">
                     <div className="act-text">
-                      <strong>{e.planta?.apelido}</strong> — {TIPO_PT[e.tipo]}{e.observacao ? `: ${e.observacao}` : ''}
+                      <strong>{e.planta?.apelido}</strong> - {TIPO_PT[e.tipo]}{e.observacao ? `: ${e.observacao}` : ''}
                     </div>
                     <div className="act-time">{relativeTime(e.registradoEm)} · por {e.autor?.nome}</div>
                   </div>

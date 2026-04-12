@@ -1,13 +1,13 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import AppShell from '../components/AppShell'
 import { useApp } from '../contexts/AppContext'
 import { useApi } from '../hooks/useApi'
 import { adocoesApi } from '../services/api'
 
 const STATUS_BADGE = {
-  PENDENTE:  { cls: 'bg-orange', label: 'Pendente' },
-  ATIVA:     { cls: 'bg-green',  label: 'Ativa' },
-  CONCLUIDA: { cls: 'bg-muted',  label: 'Concluída' },
+  PENDENTE: { cls: 'bg-orange', label: 'Pendente' },
+  ATIVA: { cls: 'bg-green', label: 'Ativa' },
+  CONCLUIDA: { cls: 'bg-muted', label: 'Concluída' },
 }
 
 export default function Adocoes() {
@@ -16,42 +16,78 @@ export default function Adocoes() {
   const [atualizando, setAtualizando] = useState(null)
 
   const { data: minhasRes, loading: lMinhas, refetch: refMinhas } = useApi(
-    () => adocoesApi.listar({ cuidadorId: usuario?.id }), [usuario?.id]
-  )
-  const { data: dasPlantasRes, loading: lDas, refetch: refDas } = useApi(
-    () => adocoesApi.listar(), []
+    () => adocoesApi.listar({ cuidadorId: usuario?.id }),
+    [usuario?.id],
   )
 
-  const lista = aba === 'minhas'
-    ? (minhasRes?.dados || [])
-    : (dasPlantasRes?.dados?.filter(a => a.planta?.donoId === usuario?.id) || [])
-  const loading = aba === 'minhas' ? lMinhas : lDas
+  const { data: recebidasRes, loading: lRecebidas, refetch: refRecebidas } = useApi(
+    () => adocoesApi.listar({ donoId: usuario?.id }),
+    [usuario?.id],
+  )
+
+  const lista = aba === 'minhas' ? (minhasRes?.dados || []) : (recebidasRes?.dados || [])
+  const loading = aba === 'minhas' ? lMinhas : lRecebidas
+
+  const atualizarListas = () => {
+    refMinhas()
+    refRecebidas()
+  }
 
   const handleAceitar = async (id) => {
     setAtualizando(id)
     try {
       await adocoesApi.aceitar(id)
-      toast('Adoção aceita!'); refDas(); refMinhas()
-    } catch (err) { toast('Erro: ' + err.message) }
-    finally { setAtualizando(null) }
+      toast('Interação aceita com sucesso!')
+      atualizarListas()
+    } catch (err) {
+      toast('Erro: ' + err.message)
+    } finally {
+      setAtualizando(null)
+    }
   }
 
   const handleConcluir = async (id) => {
     setAtualizando(id)
     try {
       await adocoesApi.concluir(id)
-      toast('Adoção concluída!'); refDas(); refMinhas()
-    } catch (err) { toast('Erro: ' + err.message) }
-    finally { setAtualizando(null) }
+      toast('Interação concluída!')
+      atualizarListas()
+    } catch (err) {
+      toast('Erro: ' + err.message)
+    } finally {
+      setAtualizando(null)
+    }
+  }
+
+  const handleCancelar = async (id) => {
+    setAtualizando(id)
+    try {
+      await adocoesApi.remover(id)
+      toast('Interação removida.')
+      atualizarListas()
+    } catch (err) {
+      toast('Erro: ' + err.message)
+    } finally {
+      setAtualizando(null)
+    }
   }
 
   return (
     <AppShell activePage="adocoes">
-      <div className="page-hd"><div><h1>Adoções</h1><p>Gerencie cuidados de plantas</p></div></div>
+      <div className="page-hd">
+        <div>
+          <h1>Interações</h1>
+          <p>Visualize suas interações e respostas no sistema</p>
+        </div>
+      </div>
 
       <div className="adocao-tabs">
-        <button className={`atab${aba === 'minhas' ? ' active' : ''}`} onClick={() => setAba('minhas')}>Minhas adoções</button>
-        <button className={`atab${aba === 'plantas' ? ' active' : ''}`} onClick={() => setAba('plantas')}>Minhas plantas</button>
+        <button className={`atab${aba === 'minhas' ? ' active' : ''}`} onClick={() => setAba('minhas')}>
+          Minhas interações
+        </button>
+        <button className={`atab${aba === 'recebidas' ? ' active' : ''}`} onClick={() => setAba('recebidas')}>
+          Interações recebidas
+        </button>
       </div>
 
       {loading ? (
@@ -59,12 +95,12 @@ export default function Adocoes() {
       ) : lista.length === 0 ? (
         <div className="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          <h3>Nenhuma adoção</h3>
-          <p>{aba === 'minhas' ? 'Você ainda não cuida de nenhuma planta.' : 'Nenhuma das suas plantas tem adoção registrada.'}</p>
+          <h3>Nenhuma interação encontrada</h3>
+          <p>{aba === 'minhas' ? 'Você ainda não enviou solicitações.' : 'Nenhum cliente interagiu com seus itens.'}</p>
         </div>
       ) : (
         <div className="adocao-grid">
-          {lista.map(a => {
+          {lista.map((a) => {
             const sb = STATUS_BADGE[a.status] || STATUS_BADGE.PENDENTE
             return (
               <div className="ac" key={a.id}>
@@ -80,13 +116,29 @@ export default function Adocoes() {
                     <span className={`badge ${sb.cls}`}>{sb.label}</span>
                   </div>
                 </div>
+
                 <div className="ac-body">
                   <div className="ac-r"><span className="l">Cuidador</span><span className="v">{a.cuidador?.nome}</span></div>
+                  <div className="ac-r"><span className="l">Dono</span><span className="v">{a.planta?.dono?.nome}</span></div>
                   <div className="ac-r"><span className="l">Início</span><span className="v">{new Date(a.dataInicio).toLocaleDateString('pt-BR')}</span></div>
                   {a.dataFim && <div className="ac-r"><span className="l">Fim</span><span className="v">{new Date(a.dataFim).toLocaleDateString('pt-BR')}</span></div>}
-                  <div className="ac-r"><span className="l">Dono</span><span className="v">{a.planta?.dono?.nome}</span></div>
+                  {a.confirmadaEm && <div className="ac-r"><span className="l">Confirmada em</span><span className="v">{new Date(a.confirmadaEm).toLocaleString('pt-BR')}</span></div>}
+                  {a.emailEnviadoEm && <div className="ac-r"><span className="l">E-mail enviado em</span><span className="v">{new Date(a.emailEnviadoEm).toLocaleString('pt-BR')}</span></div>}
+
+                  {a.mensagemCliente && (
+                    <div style={{ marginTop: 10, background: 'var(--cream)', borderRadius: 10, padding: '8px 10px', fontSize: 12, color: 'var(--ink2)' }}>
+                      <strong>Mensagem enviada:</strong> {a.mensagemCliente}
+                    </div>
+                  )}
+
+                  {a.respostaAdmin && (
+                    <div style={{ marginTop: 8, background: 'var(--blue-bg)', borderRadius: 10, padding: '8px 10px', fontSize: 12, color: 'var(--ink2)' }}>
+                      <strong>Resposta:</strong> {a.respostaAdmin}
+                    </div>
+                  )}
                 </div>
-                {(a.status === 'PENDENTE' || a.status === 'ATIVA') && (
+
+                {aba === 'recebidas' && (a.status === 'PENDENTE' || a.status === 'ATIVA') && (
                   <div className="ac-actions">
                     {a.status === 'PENDENTE' && (
                       <button className="btn btn-primary btn-sm" onClick={() => handleAceitar(a.id)} disabled={atualizando === a.id}>
@@ -98,7 +150,9 @@ export default function Adocoes() {
                         Concluir
                       </button>
                     )}
-                    <button className="btn btn-danger btn-sm">Cancelar</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleCancelar(a.id)} disabled={atualizando === a.id}>
+                      Excluir
+                    </button>
                   </div>
                 )}
               </div>

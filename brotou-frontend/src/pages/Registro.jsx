@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
 import { usuariosApi } from '../services/api'
@@ -6,7 +6,7 @@ import { usuariosApi } from '../services/api'
 export default function Registro() {
   const { loginUsuario, toast } = useApp()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmar: '' })
+  const [form, setForm] = useState({ nome: '', username: '', email: '', senha: '', confirmar: '' })
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -14,11 +14,17 @@ export default function Registro() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (form.senha !== form.confirmar) { setErro('As senhas não coincidem'); return }
-    setLoading(true); setErro('')
+    if (form.senha !== form.confirmar) {
+      setErro('As senhas não coincidem')
+      return
+    }
+
+    setLoading(true)
+    setErro('')
+
     try {
-      const res = await usuariosApi.criar({ nome: form.nome, email: form.email })
-      loginUsuario(res.dados)
+      const res = await usuariosApi.criar({ nome: form.nome, username: form.username, email: form.email })
+      loginUsuario(res.dados, res.token)
       toast('Conta criada! Bem-vindo ao Brotou!')
       navigate('/home')
     } catch (err) {
@@ -58,6 +64,10 @@ export default function Registro() {
               <div className="field">
                 <label>Nome completo</label>
                 <input name="nome" placeholder="Ana Silva" value={form.nome} onChange={handleChange} required />
+              </div>
+              <div className="field">
+                <label>Username</label>
+                <input name="username" placeholder="ana.silva" value={form.username} onChange={handleChange} required />
               </div>
               <div className="field">
                 <label>E-mail</label>

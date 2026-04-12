@@ -1,15 +1,15 @@
-const { Prisma } = require("@prisma/client");
+﻿const { Prisma } = require("@prisma/client");
 
 /**
- * Handler global de erros — registrado como último middleware no app.
+ * Handler global de erros, registrado como último middleware no app.
  */
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
   console.error("[ERROR]", err);
 
-  // Erros do Prisma
+  // Erros do Prisma.
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    // Violação de chave única
+    // Violação de chave única.
     if (err.code === "P2002") {
       const campo = err.meta?.target;
       return res.status(409).json({
@@ -18,7 +18,7 @@ const errorHandler = (err, req, res, next) => {
       });
     }
 
-    // Registro não encontrado (ex: FK inválida)
+    // Registro não encontrado (ex: FK inválida).
     if (err.code === "P2025") {
       return res.status(404).json({
         status: "erro",
@@ -26,7 +26,7 @@ const errorHandler = (err, req, res, next) => {
       });
     }
 
-    // FK inválida
+    // FK inválida.
     if (err.code === "P2003") {
       return res.status(400).json({
         status: "erro",
@@ -35,7 +35,7 @@ const errorHandler = (err, req, res, next) => {
     }
   }
 
-  // Erro genérico
+  // Erro genérico.
   const status = err.status || err.statusCode || 500;
   return res.status(status).json({
     status: "erro",

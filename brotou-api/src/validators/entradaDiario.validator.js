@@ -1,4 +1,4 @@
-const { z } = require("zod");
+﻿const { z } = require("zod");
 
 const tipoEntradaEnum = z.enum(["REGA", "ADUBACAO", "PODA", "OBSERVACAO"], {
   errorMap: () => ({ message: "Tipo deve ser REGA, ADUBACAO, PODA ou OBSERVACAO" }),
@@ -13,8 +13,8 @@ const criarEntradaSchema = z.object({
     .transform((v) => new Date(v))
     .refine((d) => !isNaN(d.getTime()), "Data inválida")
     .optional(),
-  plantaId: z.string().cuid("plantaId inválido"),
-  autorId: z.string().cuid("autorId inválido"),
+  plantaId: z.string().min(1, "plantaId inválido"),
+  autorId: z.string().min(1, "autorId inválido"),
 });
 
 const atualizarEntradaSchema = z.object({
@@ -23,8 +23,8 @@ const atualizarEntradaSchema = z.object({
 });
 
 const filtroEntradaSchema = z.object({
-  plantaId: z.string().cuid().optional(),
-  autorId: z.string().cuid().optional(),
+  plantaId: z.string().min(1).optional(),
+  autorId: z.string().min(1).optional(),
   tipo: tipoEntradaEnum.optional(),
 });
 

@@ -1,17 +1,46 @@
-const prisma = require("../lib/prisma");
+﻿const prisma = require("../lib/prisma");
+const jwt = require("jsonwebtoken");
 
 const includeBasico = {
   admin: { select: { id: true, nome: true, email: true } },
   _count: { select: { plantas: true, entradasDiario: true, adocoes: true } },
 };
 
+const normalizarUsername = (valor) => String(valor || "").trim().toLowerCase();
+
 // GET /usuarios
 const listar = async (req, res, next) => {
   try {
-    const { adminId } = req.query;
+    const { adminId, busca, username, excluirId } = req.query;
+
+    const filtros = [];
+
+    if (adminId) filtros.push({ adminId });
+    if (excluirId) filtros.push({ id: { not: excluirId } });
+
+    if (username) {
+      filtros.push({
+        username: {
+          equals: normalizarUsername(username),
+          mode: "insensitive",
+        },
+      });
+    }
+
+    if (busca) {
+      filtros.push({
+        OR: [
+          { nome: { contains: busca, mode: "insensitive" } },
+          { email: { contains: busca, mode: "insensitive" } },
+          { username: { contains: busca, mode: "insensitive" } },
+        ],
+      });
+    }
+
+    const where = filtros.length > 0 ? { AND: filtros } : {};
 
     const usuarios = await prisma.usuario.findMany({
-      where: adminId ? { adminId } : {},
+      where,
       include: includeBasico,
       orderBy: { criadoEm: "desc" },
     });
@@ -49,14 +78,26 @@ const buscarPorId = async (req, res, next) => {
 // POST /usuarios
 const criar = async (req, res, next) => {
   try {
-    const { nome, email, urlAvatar, adminId } = req.body;
+    const { nome, username, email, urlAvatar, adminId } = req.body;
 
     const usuario = await prisma.usuario.create({
-      data: { nome, email, urlAvatar, adminId },
+      data: {
+        nome,
+        username: normalizarUsername(username),
+        email,
+        urlAvatar,
+        adminId,
+      },
       include: includeBasico,
     });
 
-    return res.status(201).json({ status: "ok", dados: usuario });
+    const token = jwt.sign(
+      { id: usuario.id, email: usuario.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    return res.status(201).json({ status: "ok", dados: usuario, token });
   } catch (err) {
     next(err);
   }
@@ -65,9 +106,12 @@ const criar = async (req, res, next) => {
 // PATCH /usuarios/:id
 const atualizar = async (req, res, next) => {
   try {
+    const dados = { ...req.body };
+    if (dados.username) dados.username = normalizarUsername(dados.username);
+
     const usuario = await prisma.usuario.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: dados,
       include: includeBasico,
     });
 
@@ -87,4 +131,39 @@ const remover = async (req, res, next) => {
   }
 };
 
-module.exports = { listar, buscarPorId, criar, atualizar, remover };
+// POST /usuarios/login
+const login = async (req, res, next) => {
+  try {
+    const identificador = String(
+      req.body.identificador || req.body.email || req.body.username || "",
+    ).trim();
+
+    const usuario = await prisma.usuario.findFirst({
+      where: {
+        OR: identificador.includes("@")
+          ? [{ email: { equals: identificador, mode: "insensitive" } }]
+          : [
+              { username: { equals: normalizarUsername(identificador), mode: "insensitive" } },
+              { email: { equals: identificador, mode: "insensitive" } },
+            ],
+      },
+      include: includeBasico,
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ status: "erro", mensagem: "Usuário não encontrado" });
+    }
+
+    const token = jwt.sign(
+      { id: usuario.id, email: usuario.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    return res.json({ status: "ok", dados: usuario, token });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { listar, buscarPorId, criar, atualizar, remover, login };

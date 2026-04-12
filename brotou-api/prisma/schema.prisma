@@ -24,6 +24,7 @@ model Admin {
 model Usuario {
   id        String   @id @default(cuid())
   nome      String
+  username  String   @unique
   email     String   @unique
   urlAvatar String?  @map("url_avatar")
   criadoEm DateTime @default(now()) @map("criado_em")
@@ -34,8 +35,26 @@ model Usuario {
   plantas       Planta[]
   entradasDiario EntradaDiario[]
   adocoes        Adocao[]
+  amizadesSolicitadas Amizade[] @relation("amizades_solicitadas")
+  amizadesRecebidas   Amizade[] @relation("amizades_recebidas")
 
   @@map("usuarios")
+}
+
+model Amizade {
+  id             String       @id @default(cuid())
+  status         StatusAmizade @default(PENDENTE)
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+  respondidoEm   DateTime?    @map("respondido_em")
+
+  solicitanteId String @map("solicitante_id")
+  solicitante   Usuario @relation("amizades_solicitadas", fields: [solicitanteId], references: [id], onDelete: Cascade)
+
+  destinatarioId String @map("destinatario_id")
+  destinatario   Usuario @relation("amizades_recebidas", fields: [destinatarioId], references: [id], onDelete: Cascade)
+
+  @@unique([solicitanteId, destinatarioId])
+  @@map("amizades")
 }
 
 model Especie {
@@ -93,6 +112,10 @@ model Adocao {
   dataInicio DateTime    @map("data_inicio")
   dataFim    DateTime?   @map("data_fim")
   status     StatusAdocao @default(PENDENTE)
+  mensagemCliente String? @map("mensagem_cliente")
+  respostaAdmin   String? @map("resposta_admin")
+  emailEnviadoEm  DateTime? @map("email_enviado_em")
+  confirmadaEm    DateTime? @map("confirmada_em")
 
   plantaId String  @map("planta_id")
   planta   Planta  @relation(fields: [plantaId], references: [id], onDelete: Cascade)
@@ -120,4 +143,10 @@ enum StatusAdocao {
   PENDENTE
   ATIVA
   CONCLUIDA
+}
+
+enum StatusAmizade {
+  PENDENTE
+  ACEITA
+  RECUSADA
 }

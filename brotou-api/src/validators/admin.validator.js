@@ -1,4 +1,4 @@
-const { z } = require("zod");
+﻿const { z } = require("zod");
 
 const loginAdminSchema = z.object({
   email: z.string().email("E-mail inválido"),
