@@ -1,9 +1,24 @@
 services:
+  db:
+    image: postgres:16
+    container_name: brotou-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: senha123
+      POSTGRES_DB: brotoudb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   api:
     build:
       context: ./brotou-api
       dockerfile: Dockerfile
     container_name: brotou-api
+    depends_on:
+      - db
     env_file:
       - ./brotou-api/.env
     environment:
@@ -24,3 +39,6 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     restart: unless-stopped
+
+volumes:
+  postgres_data:

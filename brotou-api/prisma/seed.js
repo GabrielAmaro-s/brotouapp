@@ -86,13 +86,16 @@ async function main() {
   console.log(`✅ ${especies.length} espécies criadas`);
 
   // ─── Usuários ─────────────────────────────────────────────
+  const senhaUsuarioHash = await bcrypt.hash("Usuario123", 12);
+
   const ana = await prisma.usuario.upsert({
     where: { email: "ana@email.com" },
-    update: { username: "ana.silva" },
+    update: { username: "ana.silva", senha: senhaUsuarioHash },
     create: {
       nome: "Ana Silva",
       username: "ana.silva",
       email: "ana@email.com",
+      senha: senhaUsuarioHash,
       urlAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=180&q=80",
       adminId: admin.id,
     },
@@ -100,11 +103,12 @@ async function main() {
 
   const carlos = await prisma.usuario.upsert({
     where: { email: "carlos@email.com" },
-    update: { username: "carlos.lima" },
+    update: { username: "carlos.lima", senha: senhaUsuarioHash },
     create: {
       nome: "Carlos Lima",
       username: "carlos.lima",
       email: "carlos@email.com",
+      senha: senhaUsuarioHash,
       urlAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=180&q=80",
       adminId: admin.id,
     },
@@ -215,8 +219,8 @@ async function main() {
   console.log("\n🌿 Seed concluído com sucesso!");
   console.log("─────────────────────────────");
   console.log("Admin:    admin@brotou.app / admin123");
-  console.log("Usuário:  ana@email.com");
-  console.log("Usuário:  carlos@email.com");
+  console.log("Usuário:  ana@email.com / Usuario123");
+  console.log("Usuário:  carlos@email.com / Usuario123");
 }
 
 main()

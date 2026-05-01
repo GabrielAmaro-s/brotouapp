@@ -267,6 +267,18 @@ export default function Admin() {
         <div className="adm-table-wrap">
           <div className="adm-table-hd">
             <h3>Itens cadastrados ({plantasFiltradas.length})</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 320 }}>
+              <input
+                className="adm-input"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Pesquisar itens/produtos"
+                style={{ minWidth: 210 }}
+              />
+              <button type="button" className="adm-btn adm-btn-ghost" onClick={() => setBusca('')}>
+                Reexibir todos
+              </button>
+            </div>
           </div>
           {loadingPlantas ? (
             <div className="loading-wrap"><div className="spinner" style={{ borderTopColor: 'var(--adm-blue)' }} /></div>

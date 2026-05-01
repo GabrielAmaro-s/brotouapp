@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model Admin {
@@ -26,6 +25,7 @@ model Usuario {
   nome      String
   username  String   @unique
   email     String   @unique
+  senha     String
   urlAvatar String?  @map("url_avatar")
   criadoEm DateTime @default(now()) @map("criado_em")
 

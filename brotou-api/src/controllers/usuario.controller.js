@@ -1,7 +1,14 @@
-﻿const prisma = require("../lib/prisma");
+const prisma = require("../lib/prisma");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const includeBasico = {
+const selectBasico = {
+  id: true,
+  nome: true,
+  username: true,
+  email: true,
+  urlAvatar: true,
+  criadoEm: true,
   admin: { select: { id: true, nome: true, email: true } },
   _count: { select: { plantas: true, entradasDiario: true, adocoes: true } },
 };
@@ -41,7 +48,7 @@ const listar = async (req, res, next) => {
 
     const usuarios = await prisma.usuario.findMany({
       where,
-      include: includeBasico,
+      select: selectBasico,
       orderBy: { criadoEm: "desc" },
     });
 
@@ -56,8 +63,8 @@ const buscarPorId = async (req, res, next) => {
   try {
     const usuario = await prisma.usuario.findUnique({
       where: { id: req.params.id },
-      include: {
-        ...includeBasico,
+      select: {
+        ...selectBasico,
         plantas: {
           include: { especie: true },
           orderBy: { adquiridaEm: "desc" },
@@ -78,17 +85,19 @@ const buscarPorId = async (req, res, next) => {
 // POST /usuarios
 const criar = async (req, res, next) => {
   try {
-    const { nome, username, email, urlAvatar, adminId } = req.body;
+    const { nome, username, email, senha, urlAvatar, adminId } = req.body;
+    const senhaHash = await bcrypt.hash(senha, 12);
 
     const usuario = await prisma.usuario.create({
       data: {
         nome,
         username: normalizarUsername(username),
         email,
+        senha: senhaHash,
         urlAvatar,
         adminId,
       },
-      include: includeBasico,
+      select: selectBasico,
     });
 
     const token = jwt.sign(
@@ -108,11 +117,12 @@ const atualizar = async (req, res, next) => {
   try {
     const dados = { ...req.body };
     if (dados.username) dados.username = normalizarUsername(dados.username);
+    if (dados.senha) dados.senha = await bcrypt.hash(dados.senha, 12);
 
     const usuario = await prisma.usuario.update({
       where: { id: req.params.id },
       data: dados,
-      include: includeBasico,
+      select: selectBasico,
     });
 
     return res.json({ status: "ok", dados: usuario });
@@ -147,11 +157,16 @@ const login = async (req, res, next) => {
               { email: { equals: identificador, mode: "insensitive" } },
             ],
       },
-      include: includeBasico,
+      select: { ...selectBasico, senha: true },
     });
 
     if (!usuario) {
-      return res.status(404).json({ status: "erro", mensagem: "Usuário não encontrado" });
+      return res.status(401).json({ status: "erro", mensagem: "Credenciais inválidas" });
+    }
+
+    const senhaValida = await bcrypt.compare(req.body.senha, usuario.senha);
+    if (!senhaValida) {
+      return res.status(401).json({ status: "erro", mensagem: "Credenciais inválidas" });
     }
 
     const token = jwt.sign(
@@ -160,7 +175,8 @@ const login = async (req, res, next) => {
       { expiresIn: "7d" },
     );
 
-    return res.json({ status: "ok", dados: usuario, token });
+    const { senha: _, ...usuarioSemSenha } = usuario;
+    return res.json({ status: "ok", dados: usuarioSemSenha, token });
   } catch (err) {
     next(err);
   }

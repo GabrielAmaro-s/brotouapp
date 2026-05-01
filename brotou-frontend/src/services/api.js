@@ -7,7 +7,7 @@ async function request(path, options = {}) {
     auth === 'admin'
       ? localStorage.getItem('brotou_admin_token')
       : auth === 'user'
-        ? localStorage.getItem('brotou_token')
+        ? localStorage.getItem('brotou_token') || sessionStorage.getItem('brotou_token')
         : null
 
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -39,10 +39,10 @@ function buildQuery(path, params = {}) {
 export const usuariosApi = {
   listar: (params = {}) => request(buildQuery('/usuarios', params), { auth: 'none' }),
   buscar: (id) => request(`/usuarios/${id}`, { auth: 'none' }),
-  login: (identificador) => request('/usuarios/login', {
+  login: (identificador, senha) => request('/usuarios/login', {
     method: 'POST',
     auth: 'none',
-    body: JSON.stringify({ identificador }),
+    body: JSON.stringify({ identificador, senha }),
   }),
   criar: (data) => request('/usuarios', {
     method: 'POST',

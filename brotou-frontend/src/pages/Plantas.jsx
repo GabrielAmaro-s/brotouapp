@@ -10,6 +10,7 @@ export default function Plantas() {
   const { usuario, toast } = useApp()
   const navigate = useNavigate()
   const [filtro, setFiltro] = useState('todas')
+  const [busca, setBusca] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ apelido: '', especieId: '', adquiridaEm: '', urlFoto: '', disponivelParaAdocao: false })
   const [saving, setSaving] = useState(false)
@@ -22,13 +23,28 @@ export default function Plantas() {
   const plantas = plantasRes?.dados || []
   const especies = especiesRes?.dados || []
 
-  const filtered = plantas.filter(p => {
-    if (filtro === 'adocao') return p.disponivelParaAdocao
-    if (filtro === 'FACIL') return p.especie?.dificuldade === 'FACIL'
-    if (filtro === 'MEDIO') return p.especie?.dificuldade === 'MEDIO'
-    if (filtro === 'DIFICIL') return p.especie?.dificuldade === 'DIFICIL'
-    return true
-  })
+  const filtered = plantas
+    .filter(p => {
+      if (filtro === 'adocao') return p.disponivelParaAdocao
+      if (filtro === 'FACIL') return p.especie?.dificuldade === 'FACIL'
+      if (filtro === 'MEDIO') return p.especie?.dificuldade === 'MEDIO'
+      if (filtro === 'DIFICIL') return p.especie?.dificuldade === 'DIFICIL'
+      return true
+    })
+    .filter(p => {
+      const termo = busca.trim().toLowerCase()
+      if (!termo) return true
+      return (
+        p.apelido?.toLowerCase().includes(termo) ||
+        p.especie?.nomeComum?.toLowerCase().includes(termo) ||
+        p.especie?.nomeCientifico?.toLowerCase().includes(termo)
+      )
+    })
+
+  const limparFiltros = () => {
+    setBusca('')
+    setFiltro('todas')
+  }
 
   const handleSave = async () => {
     if (!form.apelido || !form.especieId || !form.adquiridaEm) {
@@ -68,8 +84,23 @@ export default function Plantas() {
         ))}
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, marginBottom: 18 }}>
+        <input
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          placeholder="Pesquisar por apelido, espécie ou nome científico"
+          style={{ padding: '10px 14px', border: '1.5px solid var(--sand)', borderRadius: 'var(--r-md)', fontSize: 14, background: 'var(--white)' }}
+        />
+        <button type="button" className="btn btn-ghost" onClick={limparFiltros}>Reexibir todos</button>
+      </div>
+
       {loading ? (
         <div className="loading-wrap"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state">
+          <h3>Nenhuma planta encontrada</h3>
+          <p>Ajuste a pesquisa ou use o botão "Reexibir todos".</p>
+        </div>
       ) : (
         <div className="plant-grid">
           {filtered.map(p => (

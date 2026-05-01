@@ -14,6 +14,11 @@ export default function Registro() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (form.senha.length < 8) {
+      setErro('A senha deve ter no mínimo 8 caracteres')
+      return
+    }
+
     if (form.senha !== form.confirmar) {
       setErro('As senhas não coincidem')
       return
@@ -23,7 +28,12 @@ export default function Registro() {
     setErro('')
 
     try {
-      const res = await usuariosApi.criar({ nome: form.nome, username: form.username, email: form.email })
+      const res = await usuariosApi.criar({
+        nome: form.nome,
+        username: form.username,
+        email: form.email,
+        senha: form.senha,
+      })
       loginUsuario(res.dados, res.token)
       toast('Conta criada! Bem-vindo ao Brotou!')
       navigate('/home')
@@ -76,11 +86,11 @@ export default function Registro() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="field">
                   <label>Senha</label>
-                  <input type="password" name="senha" placeholder="Mínimo 8 caracteres" value={form.senha} onChange={handleChange} />
+                  <input type="password" name="senha" placeholder="Mínimo 8 caracteres" value={form.senha} onChange={handleChange} required />
                 </div>
                 <div className="field">
                   <label>Confirmar</label>
-                  <input type="password" name="confirmar" placeholder="Repita a senha" value={form.confirmar} onChange={handleChange} />
+                  <input type="password" name="confirmar" placeholder="Repita a senha" value={form.confirmar} onChange={handleChange} required />
                 </div>
               </div>
               <button type="submit" className="btn btn-primary btn-full" style={{ padding: 13 }} disabled={loading}>

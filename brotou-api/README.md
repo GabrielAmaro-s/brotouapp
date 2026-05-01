@@ -299,6 +299,17 @@ brotou-api/
 
 ```
 Admin:   admin@brotou.app  /  admin123
-Usuário: ana@email.com
-Usuário: carlos@email.com
+Usuário: ana@email.com  /  Usuario123
+Usuário: carlos@email.com  /  Usuario123
 ```
+
+## Credenciais locais de teste
+
+Credenciais pessoais ou específicas do seu ambiente devem ficar fora do Git.
+Use o arquivo local ignorado:
+
+```
+CREDENCIAIS_TESTE.local.txt
+```
+
+Esse arquivo pode guardar o usuário de teste usado durante a apresentação ou desenvolvimento, sem expor a senha no repositório.

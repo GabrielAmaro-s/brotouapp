@@ -6,11 +6,14 @@ import { usuariosApi } from '../services/api'
 export default function Login() {
   const { loginUsuario, toast } = useApp()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ identificador: '', senha: '' })
+  const [form, setForm] = useState({ identificador: '', senha: '', manterConectado: true })
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
-  const handleChange = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }))
+  const handleChange = (e) => {
+    const { name, type, checked, value } = e.target
+    setForm(p => ({ ...p, [name]: type === 'checkbox' ? checked : value }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,8 +21,8 @@ export default function Login() {
     setErro('')
 
     try {
-      const res = await usuariosApi.login(form.identificador)
-      loginUsuario(res.dados, res.token)
+      const res = await usuariosApi.login(form.identificador, form.senha)
+      loginUsuario(res.dados, res.token, { manterConectado: form.manterConectado })
       toast('Bem-vindo ao Brotou!')
       navigate('/home')
     } catch (err) {
@@ -72,9 +75,18 @@ export default function Login() {
               </div>
               <div className="field">
                 <label>Senha</label>
-                <input type="password" name="senha" placeholder="********" value={form.senha} onChange={handleChange} />
+                <input type="password" name="senha" placeholder="********" value={form.senha} onChange={handleChange} required />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink2)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    name="manterConectado"
+                    checked={form.manterConectado}
+                    onChange={handleChange}
+                  />
+                  Manter conectado
+                </label>
                 <a href="#" style={{ fontSize: 13, color: 'var(--sage)' }}>Esqueci minha senha</a>
               </div>
               <button type="submit" className="btn btn-primary btn-full" style={{ padding: 13 }} disabled={loading}>
