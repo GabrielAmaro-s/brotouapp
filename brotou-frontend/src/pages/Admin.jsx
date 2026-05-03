@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
 import { useApi } from '../hooks/useApi'
-import { adocoesApi, adminApi, especiesApi, usuariosApi } from '../services/api'
+import { adocoesApi, adminApi, especiesApi } from '../services/api'
 
 function montarDonut(distribuicao) {
   const cores = {
@@ -30,6 +30,19 @@ function montarDonut(distribuicao) {
   return `conic-gradient(${partes.join(',')})`
 }
 
+const STATUS_CORES = {
+  PENDENTE: 'var(--adm-amber)',
+  ATIVA: 'var(--adm-green)',
+  CONCLUIDA: 'var(--adm-blue)',
+}
+
+const TIPO_LABELS = {
+  REGA: 'Rega',
+  ADUBACAO: 'Adubação',
+  PODA: 'Poda',
+  OBSERVACAO: 'Observação',
+}
+
 export default function Admin() {
   const { admin, logoutAdmin, toast } = useApp()
   const navigate = useNavigate()
@@ -48,15 +61,17 @@ export default function Admin() {
   })
 
   const { data: dashRes, loading: loadingDash, refetch: refDash } = useApi(() => adminApi.dashboard(), [])
-  const { data: usuariosRes } = useApi(() => usuariosApi.listar(), [])
+  const { data: usuariosRes } = useApi(() => adminApi.listarUsuarios(), [])
   const { data: plantasRes, loading: loadingPlantas, refetch: refPlantas } = useApi(() => adminApi.listarPlantas(), [])
   const { data: especiesRes } = useApi(() => especiesApi.listar(), [])
-  const { data: interacoesRes, loading: loadingInteracoes, refetch: refInteracoes } = useApi(() => adocoesApi.listar(), [])
+  const { data: interacoesRes, loading: loadingInteracoes, refetch: refInteracoes } = useApi(() => adocoesApi.listar({}, { auth: 'admin' }), [])
 
   const dash = dashRes?.dados || {}
   const totais = dash.totais || {}
   const entradasUltimos7Dias = dash.entradasUltimos7Dias || []
   const distribuicaoDificuldade = dash.plantasPorDificuldade || []
+  const adocoesPorStatus = dash.adocoesPorStatus || []
+  const entradasPorTipo = dash.entradasPorTipo || []
 
   const usuarios = usuariosRes?.dados || []
   const especies = especiesRes?.dados || []
@@ -153,11 +168,13 @@ export default function Admin() {
     const confirmou = window.confirm('Deseja realmente excluir esta interação?')
     if (!confirmou) return
 
-    executarAcaoInteracao(id, 'excluir', () => adocoesApi.remover(id))
+    executarAcaoInteracao(id, 'excluir', () => adocoesApi.remover(id, { auth: 'admin' }))
   }
 
   const renderDashboard = () => {
     const maxEntradas = Math.max(...entradasUltimos7Dias.map((d) => d.total), 1)
+    const totalStatus = adocoesPorStatus.reduce((acc, item) => acc + item.total, 0)
+    const maxTipoEntrada = Math.max(...entradasPorTipo.map((item) => item.total), 1)
 
     return (
       <>
@@ -228,6 +245,58 @@ export default function Admin() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="adm-grid-2">
+              <div className="adm-chart-box">
+                <div className="adm-chart-title">Interações por status</div>
+                {adocoesPorStatus.length === 0 ? (
+                  <div className="adm-chart-empty">Sem interações registradas.</div>
+                ) : (
+                  <div className="adm-status-chart">
+                    {adocoesPorStatus.map((item) => {
+                      const percentual = totalStatus ? Math.round((item.total / totalStatus) * 100) : 0
+                      return (
+                        <div className="adm-hbar-row" key={item.status}>
+                          <div className="adm-hbar-meta">
+                            <span>{item.status}</span>
+                            <strong>{item.total}</strong>
+                          </div>
+                          <div className="adm-hbar-track">
+                            <div
+                              className="adm-hbar-fill"
+                              style={{
+                                width: `${Math.max(percentual, 4)}%`,
+                                background: STATUS_CORES[item.status] || 'var(--adm-red)',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="adm-chart-box">
+                <div className="adm-chart-title">Entradas por tipo</div>
+                {entradasPorTipo.length === 0 ? (
+                  <div className="adm-chart-empty">Sem entradas no diário.</div>
+                ) : (
+                  <div className="adm-type-chart">
+                    {entradasPorTipo.map((item) => {
+                      const altura = Math.max(10, Math.round((item.total / maxTipoEntrada) * 100))
+                      return (
+                        <div className="adm-type-g" key={item.tipo}>
+                          <div className="adm-type-val">{item.total}</div>
+                          <div className="adm-type-bar" style={{ height: `${altura}%` }} />
+                          <div className="adm-type-lbl">{TIPO_LABELS[item.tipo] || item.tipo}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </>

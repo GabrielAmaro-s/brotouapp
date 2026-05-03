@@ -109,8 +109,8 @@ export const entradasApi = {
 }
 
 export const adocoesApi = {
-  listar: (params = {}) => request(buildQuery('/adocoes', params), { auth: 'none' }),
-  buscar: (id) => request(`/adocoes/${id}`, { auth: 'none' }),
+  listar: (params = {}, options = {}) => request(buildQuery('/adocoes', params), { auth: options.auth || 'user' }),
+  buscar: (id, options = {}) => request(`/adocoes/${id}`, { auth: options.auth || 'user' }),
   criar: (data) => request('/adocoes', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -128,7 +128,10 @@ export const adocoesApi = {
     body: JSON.stringify({ respostaAdmin }),
   }),
   enviarEmail: (id) => request(`/adocoes/${id}/enviar-email`, { method: 'PATCH', auth: 'admin' }),
-  remover: (id) => request(`/adocoes/${id}`, { method: 'DELETE' }),
+  remover: (id, options = {}) => request(`/adocoes/${id}`, {
+    method: 'DELETE',
+    auth: options.auth || 'user',
+  }),
 }
 
 export const adminApi = {

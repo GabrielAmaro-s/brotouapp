@@ -1,11 +1,12 @@
 ﻿import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../contexts/AppContext'
 import { usuariosApi } from '../services/api'
 
 export default function Login() {
   const { loginUsuario, toast } = useApp()
   const navigate = useNavigate()
+  const location = useLocation()
   const [form, setForm] = useState({ identificador: '', senha: '', manterConectado: true })
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
@@ -21,10 +22,16 @@ export default function Login() {
     setErro('')
 
     try {
-      const res = await usuariosApi.login(form.identificador, form.senha)
+      const identificador = form.identificador.trim().replace(/^@+/, '')
+      const senha = form.senha.trim()
+      const res = await usuariosApi.login(identificador, senha)
       loginUsuario(res.dados, res.token, { manterConectado: form.manterConectado })
       toast('Bem-vindo ao Brotou!')
-      navigate('/home')
+      const from = location.state?.from
+      const redirectTo = typeof from === 'string'
+        ? from
+        : `${from?.pathname || '/home'}${from?.search || ''}`
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       setErro(err.message)
     } finally {

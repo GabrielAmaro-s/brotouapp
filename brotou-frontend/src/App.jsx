@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AppProvider, useApp } from './contexts/AppContext'
 
 import Landing from './pages/Landing'
@@ -17,7 +17,8 @@ import Admin from './pages/Admin'
 
 function PrivateRoute({ children }) {
   const { usuario } = useApp()
-  return usuario ? children : <Navigate to="/login" replace />
+  const location = useLocation()
+  return usuario ? children : <Navigate to="/login" replace state={{ from: location }} />
 }
 
 function AdminRoute({ children }) {

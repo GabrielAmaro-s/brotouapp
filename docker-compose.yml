@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: senha123
       POSTGRES_DB: brotoudb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -23,6 +23,8 @@ services:
       - ./brotou-api/.env
     environment:
       FRONTEND_URL: http://localhost:${FRONTEND_PORT:-5173}
+      JWT_ADMIN_SECRET: ${JWT_ADMIN_SECRET:-admin_secret_local_docker}
+      JWT_ADMIN_EXPIRES_IN: ${JWT_ADMIN_EXPIRES_IN:-1d}
     ports:
       - "${API_PORT:-3333}:3333"
     restart: unless-stopped

@@ -66,8 +66,14 @@ const buscarPorId = async (req, res, next) => {
 // POST /plantas
 const criar = async (req, res, next) => {
   try {
+    const dados = {
+      ...req.body,
+      donoId: req.authTipo === "usuario" ? req.usuarioId : req.body.donoId,
+      adminId: req.authTipo === "admin" ? req.body.adminId : undefined,
+    };
+
     const planta = await prisma.planta.create({
-      data: req.body,
+      data: dados,
       include: includeCompleto,
     });
 

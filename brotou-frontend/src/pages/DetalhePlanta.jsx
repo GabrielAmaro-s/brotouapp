@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { useApp } from '../contexts/AppContext'
 import { useApi } from '../hooks/useApi'
@@ -18,6 +18,7 @@ export default function DetalhePlanta() {
   const { id } = useParams()
   const { usuario, toast } = useApp()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [tabTipo, setTabTipo] = useState('TODOS')
   const [formEntrada, setFormEntrada] = useState({ tipo: 'REGA', observacao: '' })
@@ -38,7 +39,16 @@ export default function DetalhePlanta() {
 
   const qtdInteracoes = useMemo(() => (planta?._count?.adocoes || 0), [planta])
 
+  const redirecionarParaLogin = () => {
+    navigate('/login', { state: { from: `${location.pathname}${location.search}` } })
+  }
+
   const handleRegistrar = async () => {
+    if (!isLogado) {
+      redirecionarParaLogin()
+      return
+    }
+
     if (!podeRegistrarDiario) {
       toast('Apenas o dono logado pode registrar entradas neste item.')
       return
@@ -63,6 +73,11 @@ export default function DetalhePlanta() {
   }
 
   const handleSolicitarAdocao = async () => {
+    if (!isLogado) {
+      redirecionarParaLogin()
+      return
+    }
+
     if (!podeSolicitarAdocao) {
       toast('Você precisa estar logado para interagir com este item.')
       return
@@ -156,7 +171,7 @@ export default function DetalhePlanta() {
               <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
                 Você pode visualizar os detalhes, mas precisa fazer login para interagir com este item.
               </p>
-              <Link to="/login" className="btn btn-primary btn-sm">Entrar para interagir</Link>
+              <Link to="/login" state={{ from: `${location.pathname}${location.search}` }} className="btn btn-primary btn-sm">Entrar para interagir</Link>
             </div>
           )}
 
@@ -223,8 +238,12 @@ export default function DetalhePlanta() {
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary btn-sm" onClick={handleRegistrar} disabled={savingEntrada || !podeRegistrarDiario}>
-                {savingEntrada ? 'Salvando...' : 'Registrar'}
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleRegistrar}
+                disabled={savingEntrada || (isLogado && !podeRegistrarDiario)}
+              >
+                {savingEntrada ? 'Salvando...' : isLogado ? 'Registrar' : 'Entrar para registrar'}
               </button>
             </div>
           </div>

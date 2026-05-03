@@ -1,5 +1,7 @@
 ﻿const prisma = require("../lib/prisma");
 
+const mailService = require("../services/mail.service");
+
 const includeCompleto = {
   planta: {
     include: {
@@ -10,18 +12,58 @@ const includeCompleto = {
   cuidador: { select: { id: true, nome: true, email: true, urlAvatar: true } },
 };
 
+const buscarInteracaoParaAcao = async (id) => prisma.adocao.findUnique({
+  where: { id },
+  include: {
+    planta: { select: { donoId: true } },
+  },
+});
+
+const usuarioPodeGerenciar = (req, adocao) => (
+  req.authTipo === "admin" ||
+  adocao?.cuidadorId === req.usuarioId ||
+  adocao?.planta?.donoId === req.usuarioId
+);
+
+const negarSeNaoPodeGerenciar = async (req, res) => {
+  const adocao = await buscarInteracaoParaAcao(req.params.id);
+
+  if (!adocao) {
+    res.status(404).json({ status: "erro", mensagem: "Adoção não encontrada" });
+    return null;
+  }
+
+  if (!usuarioPodeGerenciar(req, adocao)) {
+    res.status(403).json({ status: "erro", mensagem: "Acesso negado à interação" });
+    return null;
+  }
+
+  return adocao;
+};
+
 // GET /adocoes
 const listar = async (req, res, next) => {
   try {
     const { plantaId, cuidadorId, donoId, status, comResposta } = req.query;
 
-    const where = {};
-    if (plantaId) where.plantaId = plantaId;
-    if (cuidadorId) where.cuidadorId = cuidadorId;
-    if (status) where.status = status;
-    if (donoId) where.planta = { donoId };
-    if (comResposta === "true") where.respostaAdmin = { not: null };
-    if (comResposta === "false") where.respostaAdmin = null;
+    const filtros = [];
+    if (plantaId) filtros.push({ plantaId });
+    if (cuidadorId) filtros.push({ cuidadorId });
+    if (status) filtros.push({ status });
+    if (donoId) filtros.push({ planta: { donoId } });
+    if (comResposta === "true") filtros.push({ respostaAdmin: { not: null } });
+    if (comResposta === "false") filtros.push({ respostaAdmin: null });
+
+    if (req.authTipo === "usuario") {
+      filtros.push({
+        OR: [
+          { cuidadorId: req.usuarioId },
+          { planta: { donoId: req.usuarioId } },
+        ],
+      });
+    }
+
+    const where = filtros.length > 0 ? { AND: filtros } : {};
 
     const adocoes = await prisma.adocao.findMany({
       where,
@@ -45,6 +87,14 @@ const buscarPorId = async (req, res, next) => {
 
     if (!adocao) {
       return res.status(404).json({ status: "erro", mensagem: "Adoção não encontrada" });
+    }
+
+    if (
+      req.authTipo === "usuario" &&
+      adocao.cuidadorId !== req.usuarioId &&
+      adocao.planta?.dono?.id !== req.usuarioId
+    ) {
+      return res.status(403).json({ status: "erro", mensagem: "Acesso negado à interação" });
     }
 
     return res.json({ status: "ok", dados: adocao });
@@ -89,7 +139,7 @@ const criar = async (req, res, next) => {
         dataInicio: req.body.dataInicio,
         dataFim: req.body.dataFim,
         plantaId: req.body.plantaId,
-        cuidadorId: req.body.cuidadorId,
+        cuidadorId: req.authTipo === "usuario" ? req.usuarioId : req.body.cuidadorId,
         mensagemCliente: req.body.mensagemCliente,
       },
       include: includeCompleto,
@@ -104,6 +154,9 @@ const criar = async (req, res, next) => {
 // PATCH /adocoes/:id
 const atualizar = async (req, res, next) => {
   try {
+    const atual = await negarSeNaoPodeGerenciar(req, res);
+    if (!atual) return;
+
     const adocao = await prisma.adocao.update({
       where: { id: req.params.id },
       data: req.body,
@@ -119,6 +172,9 @@ const atualizar = async (req, res, next) => {
 // PATCH /adocoes/:id/aceitar
 const aceitar = async (req, res, next) => {
   try {
+    const atual = await negarSeNaoPodeGerenciar(req, res);
+    if (!atual) return;
+
     const adocao = await prisma.adocao.update({
       where: { id: req.params.id },
       data: { status: "ATIVA", confirmadaEm: new Date() },
@@ -179,6 +235,47 @@ const responder = async (req, res, next) => {
 // PATCH /adocoes/:id/enviar-email
 const enviarEmail = async (req, res, next) => {
   try {
+    const atual = await prisma.adocao.findUnique({
+      where: { id: req.params.id },
+      include: includeCompleto,
+    });
+
+    if (!atual) {
+      return res.status(404).json({ status: "erro", mensagem: "Adoção não encontrada" });
+    }
+
+    if (!atual.cuidador?.email) {
+      return res.status(400).json({ status: "erro", mensagem: "Interação sem e-mail do cliente" });
+    }
+
+    const resposta = atual.respostaAdmin || "Sua solicitação foi recebida e está sendo acompanhada pela equipe.";
+    const assunto = "Atualização sobre sua interação no Brotou";
+
+    const infoEmail = await mailService.enviarEmail({
+      to: atual.cuidador.email,
+      subject: assunto,
+      text: [
+        `Olá, ${atual.cuidador.nome || "cliente"}!`,
+        "",
+        `Temos uma atualização sobre sua interação com o item "${atual.planta?.apelido || "Brotou"}".`,
+        "",
+        `Status: ${atual.status}`,
+        `Resposta da equipe: ${resposta}`,
+        "",
+        "Acesse o Brotou para acompanhar suas interações.",
+      ].join("\n"),
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #243024; line-height: 1.5;">
+          <h2 style="color: #2d4a22;">Atualização no Brotou</h2>
+          <p>Olá, ${atual.cuidador.nome || "cliente"}!</p>
+          <p>Temos uma atualização sobre sua interação com o item <strong>${atual.planta?.apelido || "Brotou"}</strong>.</p>
+          <p><strong>Status:</strong> ${atual.status}</p>
+          <p><strong>Resposta da equipe:</strong> ${resposta}</p>
+          <p>Acesse o Brotou para acompanhar suas interações.</p>
+        </div>
+      `,
+    });
+
     const adocao = await prisma.adocao.update({
       where: { id: req.params.id },
       data: { emailEnviadoEm: new Date() },
@@ -187,7 +284,11 @@ const enviarEmail = async (req, res, next) => {
 
     return res.json({
       status: "ok",
-      mensagem: `E-mail registrado como enviado para ${adocao.cuidador?.email || "cliente"}`,
+      mensagem: `E-mail enviado para ${adocao.cuidador?.email || "cliente"}`,
+      email: {
+        messageId: infoEmail.messageId,
+        accepted: infoEmail.accepted,
+      },
       dados: adocao,
     });
   } catch (err) {
@@ -198,6 +299,9 @@ const enviarEmail = async (req, res, next) => {
 // PATCH /adocoes/:id/concluir
 const concluir = async (req, res, next) => {
   try {
+    const atual = await negarSeNaoPodeGerenciar(req, res);
+    if (!atual) return;
+
     const adocao = await prisma.adocao.update({
       where: { id: req.params.id },
       data: { status: "CONCLUIDA", dataFim: new Date() },
@@ -213,6 +317,9 @@ const concluir = async (req, res, next) => {
 // DELETE /adocoes/:id
 const remover = async (req, res, next) => {
   try {
+    const atual = await negarSeNaoPodeGerenciar(req, res);
+    if (!atual) return;
+
     await prisma.adocao.delete({ where: { id: req.params.id } });
     return res.status(204).send();
   } catch (err) {

@@ -3,6 +3,13 @@ GUIA RÁPIDO - DOCKER (Brotou)
 1) Pré-requisitos
 - Docker Desktop instalado e em execução.
 - Arquivo `brotou-api/.env` configurado (DATABASE_URL, DIRECT_URL e secrets JWT).
+- Para testar e-mail no Mailtrap, configure tambem no `brotou-api/.env`:
+  SMTP_HOST="sandbox.smtp.mailtrap.io"
+  SMTP_PORT=2525
+  SMTP_SECURE=false
+  SMTP_USER="usuario_do_mailtrap"
+  SMTP_PASS="senha_do_mailtrap"
+  MAIL_FROM="Brotou <no-reply@brotou.app>"
 
 2) Subir o projeto em containers
 - Na raiz do projeto, execute:

@@ -13,7 +13,7 @@ const selectBasico = {
   _count: { select: { plantas: true, entradasDiario: true, adocoes: true } },
 };
 
-const normalizarUsername = (valor) => String(valor || "").trim().toLowerCase();
+const normalizarUsername = (valor) => String(valor || "").trim().replace(/^@+/, "").toLowerCase();
 
 // GET /usuarios
 const listar = async (req, res, next) => {
@@ -147,13 +147,15 @@ const login = async (req, res, next) => {
     const identificador = String(
       req.body.identificador || req.body.email || req.body.username || "",
     ).trim();
+    const username = normalizarUsername(identificador);
+    const isEmail = identificador.includes("@") && !identificador.startsWith("@");
 
     const usuario = await prisma.usuario.findFirst({
       where: {
-        OR: identificador.includes("@")
+        OR: isEmail
           ? [{ email: { equals: identificador, mode: "insensitive" } }]
           : [
-              { username: { equals: normalizarUsername(identificador), mode: "insensitive" } },
+              { username: { equals: username, mode: "insensitive" } },
               { email: { equals: identificador, mode: "insensitive" } },
             ],
       },

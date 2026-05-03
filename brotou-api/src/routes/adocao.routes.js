@@ -9,8 +9,8 @@ const {
 
 const router = Router();
 
-router.get("/", ctrl.listar);
-router.get("/:id", ctrl.buscarPorId);
+router.get("/", autenticarUsuarioOuAdmin, ctrl.listar);
+router.get("/:id", autenticarUsuarioOuAdmin, ctrl.buscarPorId);
 router.post("/", autenticarUsuarioOuAdmin, validate(criarAdocaoSchema), ctrl.criar);
 router.patch("/:id", autenticarUsuarioOuAdmin, validate(atualizarAdocaoSchema), ctrl.atualizar);
 router.patch("/:id/aceitar", autenticarUsuarioOuAdmin, ctrl.aceitar);
