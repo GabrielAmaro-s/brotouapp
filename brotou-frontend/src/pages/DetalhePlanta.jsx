@@ -25,6 +25,7 @@ export default function DetalhePlanta() {
   const [formAdocao, setFormAdocao] = useState({ dataInicio: '', dataFim: '', mensagemCliente: '' })
   const [savingEntrada, setSavingEntrada] = useState(false)
   const [savingAdocao, setSavingAdocao] = useState(false)
+  const [removingPlanta, setRemovingPlanta] = useState(false)
 
   const { data: plantaRes, loading } = useApi(() => plantasApi.buscar(id), [id])
   const { data: entradasRes, refetch } = useApi(() => entradasApi.listar({ plantaId: id }), [id])
@@ -106,6 +107,27 @@ export default function DetalhePlanta() {
     }
   }
 
+  const handleRemoverPlanta = async () => {
+    if (!isOwner) {
+      toast('Apenas o dono pode excluir esta planta.')
+      return
+    }
+
+    const confirmou = window.confirm(`Deseja realmente excluir "${planta.apelido}"? Esta ação também remove o histórico e as interações dela.`)
+    if (!confirmou) return
+
+    setRemovingPlanta(true)
+    try {
+      await plantasApi.remover(id)
+      toast('Planta excluída com sucesso.')
+      navigate('/plantas')
+    } catch (err) {
+      toast('Erro: ' + err.message)
+    } finally {
+      setRemovingPlanta(false)
+    }
+  }
+
   if (loading) {
     return (
       <AppShell activePage="plantas">
@@ -164,6 +186,14 @@ export default function DetalhePlanta() {
             <span className="badge bg-green">{planta.especie?.nomeComum}</span>
             {planta.disponivelParaAdocao && <span className="badge bg-blue">disponível para adoção</span>}
           </div>
+
+          {isOwner && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <button className="btn btn-ghost btn-sm" onClick={handleRemoverPlanta} disabled={removingPlanta}>
+                {removingPlanta ? 'Excluindo...' : 'Excluir planta'}
+              </button>
+            </div>
+          )}
 
           {!isLogado && (
             <div className="entrada-form" style={{ marginBottom: 16, background: 'var(--cream)' }}>

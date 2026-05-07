@@ -9,6 +9,7 @@ import { plantasApi, especiesApi } from '../services/api'
 export default function Plantas() {
   const { usuario, toast } = useApp()
   const navigate = useNavigate()
+  const [visao, setVisao] = useState('minhas')
   const [filtro, setFiltro] = useState('todas')
   const [busca, setBusca] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -18,12 +19,18 @@ export default function Plantas() {
   const { data: plantasRes, loading, refetch } = useApi(
     () => plantasApi.listar({ donoId: usuario?.id }), [usuario?.id],
   )
+  const { data: disponiveisRes, loading: loadingDisponiveis } = useApi(
+    () => plantasApi.listar({ disponivelParaAdocao: true }), [],
+  )
   const { data: especiesRes } = useApi(() => especiesApi.listar(), [])
 
   const plantas = plantasRes?.dados || []
+  const disponiveis = (disponiveisRes?.dados || []).filter(p => p.donoId !== usuario?.id)
   const especies = especiesRes?.dados || []
+  const listaAtual = visao === 'minhas' ? plantas : disponiveis
+  const loadingAtual = visao === 'minhas' ? loading : loadingDisponiveis
 
-  const filtered = plantas
+  const filtered = listaAtual
     .filter(p => {
       if (filtro === 'adocao') return p.disponivelParaAdocao
       if (filtro === 'FACIL') return p.especie?.dificuldade === 'FACIL'
@@ -42,6 +49,12 @@ export default function Plantas() {
     })
 
   const limparFiltros = () => {
+    setBusca('')
+    setFiltro('todas')
+  }
+
+  const trocarVisao = (novaVisao) => {
+    setVisao(novaVisao)
     setBusca('')
     setFiltro('todas')
   }
@@ -72,10 +85,23 @@ export default function Plantas() {
     <AppShell activePage="plantas">
       <div className="page-hd">
         <div>
-          <h1>Minhas Plantas</h1>
-          <p>{loading ? 'Carregando...' : `${plantas.length} plantas cadastradas`}</p>
+          <h1>{visao === 'minhas' ? 'Minhas Plantas' : 'Disponíveis para adoção'}</h1>
+          <p>
+            {loadingAtual
+              ? 'Carregando...'
+              : visao === 'minhas'
+                ? `${plantas.length} plantas cadastradas`
+                : `${disponiveis.length} plantas de outros usuários`}
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModalOpen(true)}>+ Nova Planta</button>
+        {visao === 'minhas' && (
+          <button className="btn btn-primary" onClick={() => setModalOpen(true)}>+ Nova Planta</button>
+        )}
+      </div>
+
+      <div className="filter-row">
+        <button className={`fbtn${visao === 'minhas' ? ' active' : ''}`} onClick={() => trocarVisao('minhas')}>Minhas</button>
+        <button className={`fbtn${visao === 'disponiveis' ? ' active' : ''}`} onClick={() => trocarVisao('disponiveis')}>Para adotar</button>
       </div>
 
       <div className="filter-row">
@@ -94,12 +120,12 @@ export default function Plantas() {
         <button type="button" className="btn btn-ghost" onClick={limparFiltros}>Reexibir todos</button>
       </div>
 
-      {loading ? (
+      {loadingAtual ? (
         <div className="loading-wrap"><div className="spinner" /></div>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <h3>Nenhuma planta encontrada</h3>
-          <p>Ajuste a pesquisa ou use o botão "Reexibir todos".</p>
+          <p>{visao === 'minhas' ? 'Ajuste a pesquisa ou cadastre uma nova planta.' : 'Não há plantas de outros usuários disponíveis para adoção agora.'}</p>
         </div>
       ) : (
         <div className="plant-grid">
@@ -114,7 +140,9 @@ export default function Plantas() {
               </div>
               <div className="pc-body">
                 <div className="pc-name">{p.apelido}</div>
-                <div className="pc-sp">{p.especie?.nomeCientifico}</div>
+                <div className="pc-sp">
+                  {visao === 'disponiveis' && p.dono?.nome ? `${p.dono.nome} · ` : ''}{p.especie?.nomeCientifico}
+                </div>
                 <div className="pc-foot">
                   <span className="pc-since">Desde {new Date(p.adquiridaEm).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
                   <span className="pc-water">{p.especie?.dicaRega?.split(',')[0] || 'Ver dicas'}</span>
@@ -123,10 +151,12 @@ export default function Plantas() {
             </div>
           ))}
 
-          <button className="add-pc" onClick={() => setModalOpen(true)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            <span>Adicionar planta</span>
-          </button>
+          {visao === 'minhas' && (
+            <button className="add-pc" onClick={() => setModalOpen(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              <span>Adicionar planta</span>
+            </button>
+          )}
         </div>
       )}
 

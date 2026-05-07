@@ -12,10 +12,36 @@ export default function Registro() {
 
   const handleChange = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }))
 
+  const validarSenha = (senha) => {
+    if (senha.length < 8) return 'A senha deve ter no mínimo 8 caracteres'
+    if (!/[a-z]/.test(senha)) return 'A senha deve conter ao menos uma letra minúscula'
+    if (!/[A-Z]/.test(senha)) return 'A senha deve conter ao menos uma letra maiúscula'
+    if (!/[0-9]/.test(senha)) return 'A senha deve conter ao menos um número'
+    return ''
+  }
+
+  const validarUsername = (username) => {
+    const limpo = username.trim().replace(/^@+/, '')
+    if (limpo.length < 3) return 'Username deve ter no mínimo 3 caracteres'
+    if (limpo.length > 24) return 'Username deve ter no máximo 24 caracteres'
+    if (!/^[a-z0-9._]+$/i.test(limpo)) {
+      return 'Username deve conter apenas letras, números, ponto ou underline'
+    }
+    return ''
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (form.senha.length < 8) {
-      setErro('A senha deve ter no mínimo 8 caracteres')
+
+    const erroUsername = validarUsername(form.username)
+    if (erroUsername) {
+      setErro(erroUsername)
+      return
+    }
+
+    const erroSenha = validarSenha(form.senha)
+    if (erroSenha) {
+      setErro(erroSenha)
       return
     }
 
@@ -86,7 +112,7 @@ export default function Registro() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="field">
                   <label>Senha</label>
-                  <input type="password" name="senha" placeholder="Mínimo 8 caracteres" value={form.senha} onChange={handleChange} required />
+                  <input type="password" name="senha" placeholder="Ex: Usuario123" value={form.senha} onChange={handleChange} required />
                 </div>
                 <div className="field">
                   <label>Confirmar</label>

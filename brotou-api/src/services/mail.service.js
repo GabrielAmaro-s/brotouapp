@@ -1,6 +1,11 @@
 const nodemailer = require("nodemailer");
 
 const requiredEnv = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"];
+const emailIntervalMs = Number(process.env.SMTP_INTERVAL_MS || 6000);
+let filaEmails = Promise.resolve();
+let ultimoEnvioEm = 0;
+
+const aguardar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const criarTransporter = () => {
   const faltando = requiredEnv.filter((key) => !process.env[key]);
@@ -23,15 +28,29 @@ const criarTransporter = () => {
 };
 
 const enviarEmail = async ({ to, subject, text, html }) => {
-  const transporter = criarTransporter();
+  const tarefa = filaEmails.catch(() => {}).then(async () => {
+    const agora = Date.now();
+    const espera = Math.max(0, emailIntervalMs - (agora - ultimoEnvioEm));
 
-  return transporter.sendMail({
-    from: process.env.MAIL_FROM || "Brotou <no-reply@brotou.app>",
-    to,
-    subject,
-    text,
-    html,
+    if (espera > 0) {
+      await aguardar(espera);
+    }
+
+    const transporter = criarTransporter();
+    const info = await transporter.sendMail({
+      from: process.env.MAIL_FROM || "Brotou <no-reply@brotou.app>",
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    ultimoEnvioEm = Date.now();
+    return info;
   });
+
+  filaEmails = tarefa.catch(() => {});
+  return tarefa;
 };
 
 module.exports = { enviarEmail };

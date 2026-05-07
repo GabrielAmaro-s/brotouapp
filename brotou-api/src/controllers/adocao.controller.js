@@ -25,6 +25,79 @@ const usuarioPodeGerenciar = (req, adocao) => (
   adocao?.planta?.donoId === req.usuarioId
 );
 
+const enviarEmailAdocaoCriada = async (adocao) => {
+  const emails = [];
+  const planta = adocao.planta;
+  const cuidador = adocao.cuidador;
+  const dono = planta?.dono;
+  const nomePlanta = planta?.apelido || "Brotou";
+
+  if (cuidador?.email) {
+    emails.push(() => mailService.enviarEmail({
+      to: cuidador.email,
+      subject: `Solicitação recebida para ${nomePlanta}`,
+      text: [
+        `Olá, ${cuidador.nome || "cliente"}!`,
+        "",
+        `Recebemos sua solicitação de adoção/interação para "${nomePlanta}".`,
+        `Status: ${adocao.status}`,
+        adocao.mensagemCliente ? `Sua mensagem: ${adocao.mensagemCliente}` : null,
+        "",
+        "A equipe ou o dono da planta vai acompanhar sua solicitação pelo Brotou.",
+      ].filter(Boolean).join("\n"),
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #243024; line-height: 1.5;">
+          <h2 style="color: #2d4a22;">Solicitação recebida</h2>
+          <p>Olá, ${cuidador.nome || "cliente"}!</p>
+          <p>Recebemos sua solicitação de adoção/interação para <strong>${nomePlanta}</strong>.</p>
+          <p><strong>Status:</strong> ${adocao.status}</p>
+          ${adocao.mensagemCliente ? `<p><strong>Sua mensagem:</strong> ${adocao.mensagemCliente}</p>` : ""}
+          <p>A equipe ou o dono da planta vai acompanhar sua solicitação pelo Brotou.</p>
+        </div>
+      `,
+    }));
+  }
+
+  if (dono?.email && dono.email !== cuidador?.email) {
+    emails.push(() => mailService.enviarEmail({
+      to: dono.email,
+      subject: `Nova solicitação para ${nomePlanta}`,
+      text: [
+        `Olá, ${dono.nome || "cliente"}!`,
+        "",
+        `${cuidador?.nome || "Um usuário"} enviou uma solicitação de adoção/interação para "${nomePlanta}".`,
+        cuidador?.email ? `E-mail do solicitante: ${cuidador.email}` : null,
+        adocao.mensagemCliente ? `Mensagem: ${adocao.mensagemCliente}` : null,
+        "",
+        "Acesse o Brotou para acompanhar essa interação.",
+      ].filter(Boolean).join("\n"),
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #243024; line-height: 1.5;">
+          <h2 style="color: #2d4a22;">Nova solicitação no Brotou</h2>
+          <p>Olá, ${dono.nome || "cliente"}!</p>
+          <p>${cuidador?.nome || "Um usuário"} enviou uma solicitação de adoção/interação para <strong>${nomePlanta}</strong>.</p>
+          ${cuidador?.email ? `<p><strong>E-mail do solicitante:</strong> ${cuidador.email}</p>` : ""}
+          ${adocao.mensagemCliente ? `<p><strong>Mensagem:</strong> ${adocao.mensagemCliente}</p>` : ""}
+          <p>Acesse o Brotou para acompanhar essa interação.</p>
+        </div>
+      `,
+    }));
+  }
+
+  let enviados = 0;
+
+  for (const enviar of emails) {
+    try {
+      await enviar();
+      enviados += 1;
+    } catch (err) {
+      console.error("[MAIL] Falha ao enviar e-mail de adoção criada:", err.message);
+    }
+  }
+
+  return enviados > 0;
+};
+
 const negarSeNaoPodeGerenciar = async (req, res) => {
   const adocao = await buscarInteracaoParaAcao(req.params.id);
 
@@ -144,6 +217,18 @@ const criar = async (req, res, next) => {
       },
       include: includeCompleto,
     });
+
+    const emailEnviado = await enviarEmailAdocaoCriada(adocao);
+
+    if (emailEnviado) {
+      const adocaoAtualizada = await prisma.adocao.update({
+        where: { id: adocao.id },
+        data: { emailEnviadoEm: new Date() },
+        include: includeCompleto,
+      });
+
+      return res.status(201).json({ status: "ok", dados: adocaoAtualizada });
+    }
 
     return res.status(201).json({ status: "ok", dados: adocao });
   } catch (err) {

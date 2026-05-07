@@ -23,7 +23,10 @@ async function request(path, options = {}) {
   const data = raw ? JSON.parse(raw) : {}
 
   if (!res.ok) {
-    throw new Error(data.mensagem || 'Erro na requisicao')
+    const detalhes = Array.isArray(data.erros)
+      ? data.erros.map((erro) => erro.mensagem).join('\n')
+      : ''
+    throw new Error(detalhes || data.mensagem || 'Erro na requisicao')
   }
 
   return data
